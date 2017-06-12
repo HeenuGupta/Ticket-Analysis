@@ -1,26 +1,51 @@
 from tkinter import *
 from py2neo import *
 import csv
+import matplotlib.pyplot as plt
 from tkinter.filedialog import askopenfilename
 
 #Object for GUI
 root = Tk()
 
+xaxis=StringVar()
+yaxis=StringVar()
+
 #Object for Neo4j Database
 g=Graph(password="Heenu@96")
 
-
+TT=("Request","Issue")
+Sev=("0 - Unclassified","1 - Minor","2 - Normal","3 - Major","4 - Critical")
+RS=("1 - Junior","2 - Regular","3 - Senior","4 - Management")
+FA=("Systems","Software","Hardware","Access/Login")
+Prio=("0 - Unassigned","1 - Low","2 - Medium","3 - High")
+Sats=("0 - Unknown","1 - Unsatisfied","2 - Satisfied","3 - Highly satisfied")
 
 #Radio button function
 def sel():
     top = Tk()
-    L1 = Label(top, text=var.get())
-    L1.pack(side=LEFT)
-    E1 = Entry(top, bd=5)
-    E1.pack(side=RIGHT)
-    def show_entry_fields():
-        print("First Name: %s\n" % E1.get())
-    Button(top, text='Done', command=show_entry_fields, justify=RIGHT).pack()
+    Label(top,
+          text="""Choose the value""",
+          justify=LEFT,
+          padx=20).pack()
+    vart = StringVar()
+    vart.set("Issue")
+    R1 = Radiobutton(top, text="Issue", variable=vart, value="Issue")
+    R1.pack(anchor=W)
+    R2 = Radiobutton(top, text="Request", variable=vart, value="Request")
+    R2.pack(anchor=W)
+    print(vart.get())
+    if(vart.get()=="Issue"):
+        x = Sev
+        print(x)
+        y=[]
+        for i in (Sev):
+            y.append(g.run("MATCH (a:Ticket) WHERE TicketType=Issue AND Severity="+i+" return count(a)").data())
+        print(y)
+        width = 1 / 1.5
+        plt.bar(x, y, width, color="blue")
+        plt.show()
+
+
 
 def sel1():
     top = Tk()
@@ -172,9 +197,9 @@ R1 = Radiobutton(root, text="Total Number of Tickets", variable=var, value="Tick
 R1.pack(anchor=W)
 R2 = Radiobutton(root, text="Requester ID", variable=var, value="RequesterID", command=sel)
 R2.pack( anchor = W )
-R3 = Radiobutton(root, text="Ticket Type", variable=var, value="TicketType", command=sel1)
+R3 = Radiobutton(root, text="Ticket Type", variable=var, value="TicketType", command=sel)
 R3.pack( anchor = W)
-R4 = Radiobutton(root, text="Severity", variable=var, value="Severity", command=sel1)
+R4 = Radiobutton(root, text="Severity", variable=var, value="Severity", command=sel)
 R4.pack( anchor = W)
 R5 = Radiobutton(root, text="Requester Seniority", variable=var, value="RequesterSeniority", command=sel1)
 R5.pack( anchor = W)
