@@ -10,7 +10,7 @@ root = Tk()
 
 xaxis=1
 yaxis=0
-vary=StringVar()
+vary=IntVar()
 y = []
 z = []
 
@@ -37,10 +37,16 @@ def ysetvalue():
 
 def plotfun():
     y.clear()
-    for jj in propdict[properties[var1.get()]]:
-        print(jj)
-        print("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" + vary.get() + "'}) RETURN count(n)")
-        y.append(g.run("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" + vary.get() + "'}) RETURN count(n)").data())
+    if(var1.get()==3 or var1.get()==7 or var1.get()==8):
+        for jj in propdict[properties[var1.get()]]:
+            print(jj)
+            print("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" +int(propdict[properties[var.get()]][vary.get()]) + "'}) RETURN count(n)")
+            y.append(g.run("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" +int(propdict[properties[var.get()]][vary.get()]) + "'}) RETURN count(n)").data())
+    else:
+        for jj in propdict[properties[var1.get()]]:
+            print(jj)
+            print("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" + propdict[properties[var.get()]][vary.get()] + "'}) RETURN count(n)")
+            y.append(g.run("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" + propdict[properties[var.get()]][vary.get()] + "'}) RETURN count(n)").data())
     width = 1 / 1.5
     for a in y:
         k, v = zip(*a[0].items())
@@ -73,12 +79,16 @@ def sel1():
               text="""Choose the value""",
               justify=LEFT,
               padx=20).pack()
-        for i in propdict[properties[var.get()]]:
+        d = {ni: indi for indi, ni in enumerate(set(propdict[properties[var.get()]]))}
+        numbers = [d[ni] for ni in propdict[properties[var.get()]]]
+        numbers.sort()
+        for i in numbers:
             print(i)
-            rb = Radiobutton(top, text=i, variable=vary, value=i, command=ysetvalue)
+            rb = Radiobutton(top, text=list(propdict[properties[var.get()]])[i], variable=vary, value=i, command=ysetvalue)
             rb.pack(anchor=W)
         b = Button(top, text="Done",command=plotfun)
         b.pack()
+        scrollbar=Scrollbar(top)
         top.mainloop()
 
     width = 1 / 1.5
@@ -274,4 +284,6 @@ B = Button(root, text ="Done", command = sel1)
 B.pack()
 
 root.mainloop()
+
+
 
