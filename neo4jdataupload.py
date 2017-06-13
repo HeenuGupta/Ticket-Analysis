@@ -37,11 +37,12 @@ def ysetvalue():
 
 def plotfun():
     y.clear()
-    if(var1.get()==3 or var1.get()==7 or var1.get()==8):
+    if(var.get()==3 or var.get()==7 or var.get()==8):
         for jj in propdict[properties[var1.get()]]:
             print(jj)
-            print("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" +int(propdict[properties[var.get()]][vary.get()]) + "'}) RETURN count(n)")
-            y.append(g.run("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" +int(propdict[properties[var.get()]][vary.get()]) + "'}) RETURN count(n)").data())
+            print("here")
+            print("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" +str(list(propdict[properties[var.get()]])[vary.get()]) + "'}) RETURN count(n)")
+            y.append(g.run("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" +str(list(propdict[properties[var.get()]])[vary.get()]) + "'}) RETURN count(n)").data())
     else:
         for jj in propdict[properties[var1.get()]]:
             print(jj)
@@ -83,12 +84,13 @@ def sel1():
         numbers = [d[ni] for ni in propdict[properties[var.get()]]]
         numbers.sort()
         for i in numbers:
-            print(i)
+            print("Here"+str(i))
             rb = Radiobutton(top, text=list(propdict[properties[var.get()]])[i], variable=vary, value=i, command=ysetvalue)
             rb.pack(anchor=W)
         b = Button(top, text="Done",command=plotfun)
         b.pack()
-        scrollbar=Scrollbar(top)
+        s=Scrollbar(top)
+        s.pack()
         top.mainloop()
 
     width = 1 / 1.5
