@@ -2,62 +2,97 @@ from tkinter import *
 from py2neo import *
 import csv
 import matplotlib.pyplot as plt
+import numpy as np
 from tkinter.filedialog import askopenfilename
 
 #Object for GUI
 root = Tk()
 
-xaxis=StringVar()
-yaxis=StringVar()
+xaxis=1
+yaxis=0
+vary=StringVar()
+y = []
+z = []
 
 #Object for Neo4j Database
 g=Graph(password="Heenu@96")
 
-TT=("Request","Issue")
-Sev=("0 - Unclassified","1 - Minor","2 - Normal","3 - Major","4 - Critical")
-RS=("1 - Junior","2 - Regular","3 - Senior","4 - Management")
-FA=("Systems","Software","Hardware","Access/Login")
-Prio=("0 - Unassigned","1 - Low","2 - Medium","3 - High")
-Sats=("0 - Unknown","1 - Unsatisfied","2 - Satisfied","3 - Highly satisfied")
+properties=["Ticket","TicketType","Severity","RequesterID","RequesterSeniority","FiledAgainst","Priority","ITOwnerID","DaysOpen","Satisfaction"]
+propdict={'Ticket':(),'TicketType':("Request","Issue"),'Severity':("0 - Unclassified","1 - Minor","2 - Normal","3 - Major","4 - Critical"),'RequesterID':set(),'RequesterSeniority':("1 - Junior","2 - Regular","3 - Senior","4 - Management"),'FiledAgainst':("Systems","Software","Hardware","Access/Login"),'Priority':("0 - Unassigned","1 - Low","2 - Medium","3 - High"),'ITOwnerID':set(),'DaysOpen':set(),'Satisfaction':("0 - Unknown","1 - Unsatisfied","2 - Satisfied","3 - Highly satisfied")}
+
+
+#sets the radiobutton value
+def xsetchoice():
+    xaxis=var1.get()
+    print(xaxis)
+
+def ysetchoice():
+    yaxis=var.get()
+    print(yaxis)
+
+def ysetvalue():
+    yval=vary.get()
+    print(vary.get())
+    print(yval)
+
+def plotfun():
+    y.clear()
+    for jj in propdict[properties[var1.get()]]:
+        print(jj)
+        print("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" + vary.get() + "'}) RETURN count(n)")
+        y.append(g.run("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'," + properties[var.get()] + ":'" + vary.get() + "'}) RETURN count(n)").data())
+    width = 1 / 1.5
+    for a in y:
+        k, v = zip(*a[0].items())
+        print(k)
+        print(v)
+        z.append(int(v[0]))
+        print("Z is")
+        print(z)
+    y_pos = np.arange(len(propdict[properties[var1.get()]]))
+    plt.bar(y_pos, z, width, color="blue")
+    plt.xticks(y_pos, propdict[properties[var1.get()]])
+    plt.show()
+
+
+
 
 #Radio button function
-def sel():
-    top = Tk()
-    Label(top,
-          text="""Choose the value""",
-          justify=LEFT,
-          padx=20).pack()
-    vart = StringVar()
-    vart.set("Issue")
-    R1 = Radiobutton(top, text="Issue", variable=vart, value="Issue")
-    R1.pack(anchor=W)
-    R2 = Radiobutton(top, text="Request", variable=vart, value="Request")
-    R2.pack(anchor=W)
-    print(vart.get())
-    if(vart.get()=="Issue"):
-        x = Sev
-        print(x)
-        y=[]
-        for i in (Sev):
-            y.append(g.run("MATCH (a:Ticket) WHERE TicketType=Issue AND Severity="+i+" return count(a)").data())
-        print(y)
-        width = 1 / 1.5
-        plt.bar(x, y, width, color="blue")
-        plt.show()
-
-
-
 def sel1():
-    top = Tk()
-    v=StringVar()
-    L1 = Label(top, text=var.get())
-    L1.pack(side=LEFT)
-    E1 = Entry(top, bd=5)
-    E1.pack(side=RIGHT)
-    def show_entry_fields():
-        v=E1.get()
-    Button(top, text='Done', command=show_entry_fields, justify=RIGHT).pack()
-    return v
+    print(var1.get())
+    print(var.get())
+    if (var.get() == 0):
+        print(propdict[properties[var1.get()]])
+        for jj in propdict[properties[var1.get()]]:
+            print(jj)
+            print("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'}) RETURN count(n)")
+            y.append(g.run("MATCH (n:Ticket{" + properties[var1.get()] + ":'" + str(jj) + "'}) RETURN count(n)").data())
+    else:
+        top = Tk()
+        Label(top,
+              text="""Choose the value""",
+              justify=LEFT,
+              padx=20).pack()
+        for i in propdict[properties[var.get()]]:
+            print(i)
+            rb = Radiobutton(top, text=i, variable=vary, value=i, command=ysetvalue)
+            rb.pack(anchor=W)
+        b = Button(top, text="Done",command=plotfun)
+        b.pack()
+        top.mainloop()
+
+    width = 1 / 1.5
+    for a in y:
+        k, v = zip(*a[0].items())
+        print(k)
+        print(v)
+        z.append(int(v[0]))
+        print("Z is")
+        print(z)
+    y_pos = np.arange(len(propdict[properties[var1.get()]]))
+    plt.bar(y_pos, z, width, color="blue")
+    plt.xticks(y_pos, propdict[properties[var1.get()]])
+    plt.show()
 
 
 #to browse CSV Data file and upload the data to Neo4j and make relationships among the nodes`
@@ -66,18 +101,15 @@ def browsefunc():
                                                filetypes=(("csv files", "*.csv"), ("all files", "*.*")))
     print(root.filename)
     name=root.filename
-    rqidarray=set()
-    ITidarray = set()
-    daysarray = set()
     with open(name) as csvfile:
         reader = csv.DictReader(csvfile)
         tx = g.begin()
         for line in reader:
             a = Node("Ticket", TicketID=line['Ticket'], TicketType=line['TicketType'], Severity=line['Severity'], RequesterID=int(line['RequesterID']), RequesterSeniority=line['RequesterSeniority'], FiledAgainst=line['FiledAgainst'],Priority=line['Priority'], ITOwnerID=int(line['ITOwnerID']), DaysOpen=int(line['DaysOpen']), Satisfaction=line['Satisfaction'])
             tx.merge(a)
-            rqidarray.add(int(line['RequesterID']))
-            ITidarray.add(int(line['ITOwnerID']))
-            daysarray.add(int(line['DaysOpen']))
+            propdict['RequesterID'].add(int(line['RequesterID']))
+            propdict['ITOwnerID'].add(int(line['ITOwnerID']))
+            propdict['DaysOpen'].add(int(line['DaysOpen']))
             b=Node("RequesterID", RequesterID=int(line['RequesterID']))
             tx.merge(b)
             c = Node("ITOwnerID", ITOwnerID=int(line['ITOwnerID']))
@@ -85,8 +117,6 @@ def browsefunc():
             d = Node("DaysOpen", DaysOpen=int(line['DaysOpen']))
             tx.merge(d)
         tx.commit()
-    #print(array)
-    #print(array.__len__())
     tx=g.begin()
     a=Node("TicketType", TicketType='Request')
     tx.merge(a)
@@ -158,11 +188,11 @@ def browsefunc():
     g.run("MATCH (a:Ticket),(b:Satisfaction) WHERE a.Satisfaction = '1 - Unsatisfied' AND b.Satisfaction = '1 - Unsatisfied' MERGE (a)-[r:Satisfaction]->(b)").data()
     g.run("MATCH (a:Ticket),(b:Satisfaction) WHERE a.Satisfaction = '2 - Satisfied' AND b.Satisfaction = '2 - Satisfied' MERGE (a)-[r:Satisfaction]->(b)").data()
     g.run("MATCH (a:Ticket),(b:Satisfaction) WHERE a.Satisfaction = '3 - Highly satisfied' AND b.Satisfaction = '3 - Highly satisfied' MERGE (a)-[r:Satisfaction]->(b)").data()
-    for value in rqidarray:
+    for value in propdict['RequesterID']:
         g.run("MATCH (a:Ticket),(b:RequesterID) WHERE a.RequesterID = " +  str(value) + " AND b.RequesterID = " + str(value) + " MERGE (a)-[r:RequesterID]->(b)")
-    for value in ITidarray:
+    for value in propdict['ITOwnerID']:
         g.run("MATCH (a:Ticket),(b:ITOwnerID) WHERE a.ITOwnerID = " + str(value) + " AND b.ITOwnerID = " + str(value) + " MERGE (a)-[r:ITOwnerID]->(b)")
-    for value in daysarray:
+    for value in propdict['DaysOpen']:
         g.run("MATCH (a:Ticket),(b:DaysOpen) WHERE a.DaysOpen = " + str(value) + " AND b.DaysOpen = " + str(value) + " MERGE (a)-[r:DaysOpen]->(b)")
     print("Database uploaded successfully to Neo4j")
 
@@ -186,67 +216,62 @@ helpmenu.add_command(label="About...", command=donothing)
 menubar.add_cascade(label="Help", menu=helpmenu)
 root.config(menu=menubar)
 
-#Radio Button Selection for Y-axis
-Label(root,
-      text="""Choose the parameter for Y-Axis""",
-      justify=LEFT,
-      padx=20).pack()
-var = StringVar()
-var.set("abc")
-R1 = Radiobutton(root, text="Total Number of Tickets", variable=var, value="Ticket")
-R1.pack(anchor=W)
-R2 = Radiobutton(root, text="Requester ID", variable=var, value="RequesterID", command=sel)
-R2.pack( anchor = W )
-R3 = Radiobutton(root, text="Ticket Type", variable=var, value="TicketType", command=sel)
-R3.pack( anchor = W)
-R4 = Radiobutton(root, text="Severity", variable=var, value="Severity", command=sel)
-R4.pack( anchor = W)
-R5 = Radiobutton(root, text="Requester Seniority", variable=var, value="RequesterSeniority", command=sel1)
-R5.pack( anchor = W)
-R6 = Radiobutton(root, text="Filed Against", variable=var, value="Filed Against", command=sel1)
-R6.pack( anchor = W)
-R7 = Radiobutton(root, text="Priority", variable=var, value="Priority", command=sel1)
-R7.pack( anchor = W)
-R8 = Radiobutton(root, text="IT Owner ID", variable=var, value="ITOwnerID", command=sel)
-R8.pack( anchor = W)
-R9 = Radiobutton(root, text="Days Open", variable=var, value="Days Open", command=sel)
-R9.pack( anchor = W)
-R10 = Radiobutton(root, text="Satisfaction", variable=var, value="Satisfaction", command=sel1)
-R10.pack( anchor = W)
-yaxis=var.get()
-#yaxis=sel()
+
 
 #Radio Button Selection for X-axis
 Label(root,
       text="""Choose the parameter for X-Axis""",
       justify=LEFT,
       padx=20).pack()
-var1 = StringVar()
-var1.set("abc")
-#R1 = Radiobutton(root, text="Total Number of Tickets", variable=var1, value="Ticket", command=sel)
-#R1.pack(anchor=W)
-R12 = Radiobutton(root, text="Requester ID", variable=var1, value="RequesterID")
+var1 = IntVar()
+R12 = Radiobutton(root, text="Requester ID", variable=var1, value=3, command=xsetchoice)
 R12.pack( anchor = W )
-R13 = Radiobutton(root, text="Ticket Type", variable=var1, value="TicketType")
+R13 = Radiobutton(root, text="Ticket Type", variable=var1, value=1, command=xsetchoice)
 R13.pack( anchor = W)
-R14 = Radiobutton(root, text="Severity", variable=var1, value="Severity")
+R14 = Radiobutton(root, text="Severity", variable=var1, value=2, command=xsetchoice)
 R14.pack( anchor = W)
-R15 = Radiobutton(root, text="Requester Seniority", variable=var1, value="RequesterSeniority")
+R15 = Radiobutton(root, text="Requester Seniority", variable=var1, value=4, command=xsetchoice)
 R15.pack( anchor = W)
-R16 = Radiobutton(root, text="Filed Against", variable=var1, value="Filed Against")
+R16 = Radiobutton(root, text="Filed Against", variable=var1, value=5, command=xsetchoice)
 R16.pack( anchor = W)
-R17 = Radiobutton(root, text="Priority", variable=var1, value="Priority")
+R17 = Radiobutton(root, text="Priority", variable=var1, value=6, command=xsetchoice)
 R17.pack( anchor = W)
-R18 = Radiobutton(root, text="IT Owner ID", variable=var1, value="ITOwnerID")
+R18 = Radiobutton(root, text="IT Owner ID", variable=var1, value=7, command=xsetchoice)
 R18.pack( anchor = W)
-R19 = Radiobutton(root, text="Days Open", variable=var1, value="Days Open")
+R19 = Radiobutton(root, text="Days Open", variable=var1, value=8, command=xsetchoice)
 R19.pack( anchor = W)
-R20 = Radiobutton(root, text="Satisfaction", variable=var1, value="Satisfaction")
+R20 = Radiobutton(root, text="Satisfaction", variable=var1, value=9, command=xsetchoice)
 R20.pack( anchor = W)
-xaxis=var.get()
-#xaxis=sel1()
 
+#Radio Button Selection for Y-axis
+Label(root,
+      text="""Choose the parameter for Y-Axis""",
+      justify=LEFT,
+      padx=20).pack()
+var = IntVar()
+R1 = Radiobutton(root, text="Total Number of Tickets", variable=var, value=0,command=ysetchoice)
+R1.pack(anchor=W)
+R2 = Radiobutton(root, text="Requester ID", variable=var, value=3, command=ysetchoice)
+R2.pack( anchor = W )
+R3 = Radiobutton(root, text="Ticket Type", variable=var, value=1, command=ysetchoice)
+R3.pack( anchor = W)
+R4 = Radiobutton(root, text="Severity", variable=var, value=2, command=ysetchoice)
+R4.pack( anchor = W)
+R5 = Radiobutton(root, text="Requester Seniority", variable=var, value=4, command=ysetchoice)
+R5.pack( anchor = W)
+R6 = Radiobutton(root, text="Filed Against", variable=var, value=5, command=ysetchoice)
+R6.pack( anchor = W)
+R7 = Radiobutton(root, text="Priority", variable=var, value=6, command=ysetchoice)
+R7.pack( anchor = W)
+R8 = Radiobutton(root, text="IT Owner ID", variable=var, value=7, command=ysetchoice)
+R8.pack( anchor = W)
+R9 = Radiobutton(root, text="Days Open", variable=var, value=8, command=ysetchoice)
+R9.pack( anchor = W)
+R10 = Radiobutton(root, text="Satisfaction", variable=var, value=9, command=ysetchoice)
+R10.pack( anchor = W)
+
+B = Button(root, text ="Done", command = sel1)
+B.pack()
 
 root.mainloop()
-
 
